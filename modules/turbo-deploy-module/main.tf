@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~>5.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "~>2.0"
+    }
   }
 }
 
@@ -428,26 +432,30 @@ resource "aws_iam_role_policy_attachment" "golang_lambda_policy_attach" {
   policy_arn = aws_iam_policy.golang_lambda_policy.arn
 }
 
-resource "null_resource" "generate_lambda_zip" {
-  triggers = {
-    always_run = "${timestamp()}"
-  }
+// download lambda_function.zip from turbo deploy v0.1.0 pre-release
 
-  provisioner "local-exec" {
-    command = <<EOF
-      if [ ! -f "${path.module}/${var.lambda_function_zip_path}" ]; then
-        chmod +x ${path.module}/../../generate_zip.sh
-        ${path.module}/../../generate_zip.sh ${path.module}
-      fi
-    EOF
-  }
+data "http" "latest_release" {
+  url = "https://api.github.com/repos/frgrisk/turbo-deploy/releases/tags/v0.1.0"
+}
+
+locals {
+  download_url = jsondecode(data.http.latest_release.body).assets[0].browser_download_url
+}
+
+data "http" "lambda_zip" {
+  url = local.download_url
+}
+
+resource "local_file" "lambda_zip" {
+  content  = data.http.lambda_zip.body
+  filename = "${path.module}/lambda_function.zip"
 }
 
 resource "aws_lambda_function" "database_lambda" {
   function_name = var.database_lambda_function_name
 
-  filename         = "${path.module}/${var.lambda_function_zip_path}"
-  source_code_hash = fileexists("${path.module}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.module}/${var.lambda_function_zip_path}") : ""
+  filename         = local_file.lambda_zip.filename
+  source_code_hash = filebase64sha256(local_file.lambda_zip.filename)
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
