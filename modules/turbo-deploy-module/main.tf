@@ -439,7 +439,7 @@ data "http" "latest_release" {
 }
 
 locals {
-  download_url = jsondecode(data.http.latest_release.body).assets[0].browser_download_url
+  download_url = jsondecode(data.http.latest_release.response_body).assets[0].browser_download_url
 }
 
 data "http" "lambda_zip" {
