@@ -4,10 +4,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~>5.0"
     }
-    http = {
-      source  = "hashicorp/http"
-      version = "~>2.0"
-    }
   }
 }
 
@@ -442,20 +438,26 @@ locals {
   download_url = jsondecode(data.http.latest_release.response_body).assets[0].browser_download_url
 }
 
-data "http" "lambda_zip" {
-  url = local.download_url
-}
+resource "null_resource" "download_lambda_zip" {
+  triggers = {
+    download_url = local.download_url
+  }
 
-resource "local_file" "lambda_zip" {
-  content  = data.http.lambda_zip.response_body
-  filename = "${path.module}/lambda_function.zip"
+  provisioner "local-exec" {
+    command = <<EOF
+      mkdir -p ${path.module}/lambda_zip &&
+      chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
+      ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.module}/lambda_zip/lambda_function.zip'
+    EOF
+  }
+
+  depends_on = [data.http.latest_release]
 }
 
 resource "aws_lambda_function" "database_lambda" {
-  function_name = var.database_lambda_function_name
-
-  filename         = local_file.lambda_zip.filename
-  source_code_hash = filebase64sha256(local_file.lambda_zip.filename)
+  function_name    = var.database_lambda_function_name
+  filename         = "${path.module}/${var.lambda_function_zip_path}"
+  source_code_hash = fileexists("${path.module}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.module}/${var.lambda_function_zip_path}") : ""
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
@@ -466,7 +468,7 @@ resource "aws_lambda_function" "database_lambda" {
     }
   }
 
-  depends_on = [local_file.lambda_zip]
+  depends_on = [null_resource.download_lambda_zip]
 
 }
 
