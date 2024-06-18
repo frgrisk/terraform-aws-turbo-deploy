@@ -447,7 +447,7 @@ data "http" "lambda_zip" {
 }
 
 resource "local_file" "lambda_zip" {
-  content  = data.http.lambda_zip.body
+  content  = data.http.lambda_zip.response_body
   filename = "${path.module}/lambda_function.zip"
 }
 
