@@ -466,7 +466,7 @@ resource "aws_lambda_function" "database_lambda" {
     }
   }
 
-  depends_on = [null_resource.generate_lambda_zip]
+  depends_on = [local_file.lambda_zip]
 
 }
 
