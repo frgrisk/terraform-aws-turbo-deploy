@@ -16,12 +16,6 @@ variable "public_subnet_ids" {
   default     = []
 }
 
-variable "aws_region" {
-  description = "region to provision aws suite"
-  type        = string
-  default     = "us-east-1"
-}
-
 variable "ecr_image_tag_mutability" {
   description = "Mutability of the ecr image tag"
   type        = string

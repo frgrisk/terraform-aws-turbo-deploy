@@ -7,12 +7,14 @@ terraform {
   }
 }
 
+data "aws_region" "current" {}
+
 data "template_file" "main_tf" {
   template = file("${path.module}/templates/main.tf.tpl")
 
   vars = {
     bucket_name             = var.s3_tf_bucket_name
-    region                  = var.aws_region
+    region                  = data.aws_region.current.name
     dynamodb_table          = var.dynamodb_tf_locks_name
     security_group_id_input = var.security_group_id != null ? var.security_group_id : ""
     public_subnet_id_input  = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
@@ -55,7 +57,7 @@ resource "null_resource" "build_and_push_docker_image" {
     command = <<EOT
       cd ${path.module}/ecr-scripts
       chmod +x deploy_lambda.sh
-      AWS_REGION="${var.aws_region}" ./deploy_lambda.sh
+      AWS_REGION="${data.aws_region.current.name}" ./deploy_lambda.sh
     EOT
   }
   depends_on = [aws_ecr_repository.tf_lambda_ecr_repository, null_resource.copy_main_tf]
