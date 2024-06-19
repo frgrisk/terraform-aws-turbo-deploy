@@ -19,10 +19,7 @@ echo "Adjusting permissions."
 chmod -R 755 /tmp
 
 echo "Activating Python virtual environment."
-python3 -m venv $VENV_PATH
-source $VENV_PATH/bin/activate
-echo "Installing Python packages with pip, using /tmp for cache."
-pip install --cache-dir /tmp/pip_cache -r $TF_WORKING_DIR/requirements.txt
+source /var/task/bin/activate
 
 echo "Changing to the Terraform working directory."
 cd "$TF_WORKING_DIR"
