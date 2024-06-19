@@ -9,32 +9,28 @@ terraform {
 
 data "aws_region" "current" {}
 
-data "template_file" "main_tf" {
-  template = file("${path.module}/templates/main.tf.tpl")
-
-  vars = {
-    bucket_name             = var.s3_tf_bucket_name
-    region                  = data.aws_region.current.name
-    dynamodb_table          = var.dynamodb_tf_locks_name
-    security_group_id_input = var.security_group_id != null ? var.security_group_id : ""
-    public_subnet_id_input  = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
-
-  }
-}
-
-// write to the main.tf in ecr-scripts
 resource "null_resource" "copy_main_tf" {
   triggers = {
-    main_tf_content = data.template_file.main_tf.rendered
+    main_tf_content = templatefile("${path.module}/templates/main.tf.tpl", {
+      bucket_name             = var.s3_tf_bucket_name
+      region                  = data.aws_region.current.name
+      dynamodb_table          = var.dynamodb_tf_locks_name
+      security_group_id_input = var.security_group_id != null ? var.security_group_id : ""
+      public_subnet_id_input  = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
+    })
   }
 
   provisioner "local-exec" {
-    command = "echo '${data.template_file.main_tf.rendered}' > ${path.module}/ecr-scripts/main.tf"
+    command = "echo '${templatefile("${path.module}/templates/main.tf.tpl", {
+      bucket_name             = var.s3_tf_bucket_name
+      region                  = data.aws_region.current.name
+      dynamodb_table          = var.dynamodb_tf_locks_name
+      security_group_id_input = var.security_group_id != null ? var.security_group_id : ""
+      public_subnet_id_input  = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
+    })}' > ${path.module}/ecr-scripts/main.tf"
   }
-
-  depends_on = [data.template_file.main_tf]
-
 }
+
 
 // ecr defined for the images to be pushed for lambda usage
 resource "aws_ecr_repository" "tf_lambda_ecr_repository" {
