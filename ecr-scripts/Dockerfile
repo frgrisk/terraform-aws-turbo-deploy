@@ -1,5 +1,5 @@
 # Dockerfile
-FROM public.ecr.aws/lambda/provided:al2
+FROM --platform=linux/x86_64 public.ecr.aws/lambda/provided:al2
 
 ARG ARCH=amd64
 ARG TERRAFORM_VERSION=1.7.4
