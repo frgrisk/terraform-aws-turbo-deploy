@@ -10,7 +10,7 @@ terraform {
 data "aws_region" "current" {}
 
 locals {
-  rendered_main_tf = templatefile("${path.module}/ta_terraform-aws-turbo-deploy/main.tf.tpl", {
+  rendered_main_tf = templatefile("${path.module}/templates/main.tf.tpl", {
     bucket_name             = var.s3_tf_bucket_name
     region                  = data.aws_region.current.name
     dynamodb_table          = var.dynamodb_tf_locks_name

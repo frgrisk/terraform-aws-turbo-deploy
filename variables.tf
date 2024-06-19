@@ -32,7 +32,6 @@ variable "ecr_scan_on_push" {
 variable "s3_tf_bucket_name" {
   description = "name of the s3 bucket for the lambda with terraform binary"
   type        = string
-  default     = "terraform-lambda-deploy-state"
 }
 
 variable "s3_force_destroy" {
