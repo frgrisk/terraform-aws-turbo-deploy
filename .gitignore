@@ -38,3 +38,5 @@ venv/
 
 turbo-deploy
 *.zip
+
+.terraform.lock.hcl
