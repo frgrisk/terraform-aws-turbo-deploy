@@ -1,0 +1,12 @@
+on: push
+jobs:
+  check-terraform:
+    name: Check Terraform Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -recursive -check
