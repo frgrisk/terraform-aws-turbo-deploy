@@ -24,7 +24,7 @@ echo "Changing to the Terraform working directory."
 cd "$TF_WORKING_DIR"
 
 echo "Initializing Terraform."
-terraform init -input=false
+terraform init -input=false -no-color
 
 echo "Applying Terraform configuration."
-terraform apply -input=false -auto-approve -lock=false
+terraform apply -input=false -auto-approve -lock=false -no-color
