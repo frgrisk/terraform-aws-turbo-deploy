@@ -30,34 +30,6 @@ resource "null_resource" "copy_main_tf" {
   }
 }
 
-
-// ecr defined for the images to be pushed for lambda usage
-resource "aws_ecr_repository" "tf_lambda_ecr_repository" {
-  name                 = var.ecr_repository_name
-  image_tag_mutability = var.ecr_image_tag_mutability
-  force_delete         = true
-  image_scanning_configuration {
-    scan_on_push = var.ecr_scan_on_push
-  }
-}
-
-// null resource to deploy ecr image
-resource "null_resource" "build_and_push_docker_image" {
-  # Trigger a new build when the ECR repository URL changes
-  triggers = {
-    ecr_repository_url = aws_ecr_repository.tf_lambda_ecr_repository.repository_url
-  }
-
-  provisioner "local-exec" {
-    command = <<EOT
-      cd ${path.module}/ecr-scripts
-      chmod +x deploy_lambda.sh
-      AWS_REGION="${data.aws_region.current.name}" ./deploy_lambda.sh
-    EOT
-  }
-  depends_on = [aws_ecr_repository.tf_lambda_ecr_repository, null_resource.copy_main_tf]
-}
-
 // create an s3 bucket for lambda tf state
 resource "aws_s3_bucket" "s3_terraform_state" {
   bucket        = var.s3_tf_bucket_name
@@ -333,7 +305,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ecr:BatchCheckLayerAvailability",
         ],
         # Resource = "${data.aws_ecr_repository.my_tf_function.arn}"
-        Resource = "${aws_ecr_repository.tf_lambda_ecr_repository.arn}"
+        Resource = "*"
       },
       {
         Effect = "Allow",
@@ -469,16 +441,14 @@ resource "aws_lambda_function" "database_lambda" {
 
 }
 
-data "aws_ecr_image" "latest" {
-  repository_name = aws_ecr_repository.tf_lambda_ecr_repository.name
-  most_recent     = true
-
-  depends_on = [null_resource.build_and_push_docker_image]
+data "aws_ecr_repository" "my_tf_function" {
+  name = var.ecr_repository_name
 }
+
 
 resource "aws_lambda_function" "my_tf_function" {
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.tf_lambda_ecr_repository.repository_url}@${data.aws_ecr_image.latest.image_digest}"
+  image_uri     = "${data.aws_ecr_repository.my_tf_function.repository_url}:latest"
   role          = aws_iam_role.terraform_lambda_role.arn
   function_name = var.terraform_lambda_function_name
   timeout       = 600
@@ -494,7 +464,6 @@ resource "aws_lambda_function" "my_tf_function" {
     }
   }
   depends_on = [
-    null_resource.build_and_push_docker_image,
     aws_s3_bucket.s3_terraform_state,
     aws_dynamodb_table.dynamoDB_terraform_locks,
   ]
