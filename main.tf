@@ -9,27 +9,6 @@ terraform {
 
 data "aws_region" "current" {}
 
-locals {
-  rendered_main_tf = templatefile("${path.module}/templates/main.tf.tpl", {
-    bucket_name             = var.s3_tf_bucket_name
-    region                  = data.aws_region.current.name
-    dynamodb_table          = var.dynamodb_tf_locks_name
-    security_group_id_input = var.security_group_id != null ? var.security_group_id : ""
-    public_subnet_id_input  = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
-  })
-}
-
-
-resource "null_resource" "copy_main_tf" {
-  triggers = {
-    main_tf_content = local.rendered_main_tf
-  }
-
-  provisioner "local-exec" {
-    command = "echo '${local.rendered_main_tf}' > ${path.module}/ecr-scripts/main.tf"
-  }
-}
-
 // create an s3 bucket for lambda tf state
 resource "aws_s3_bucket" "s3_terraform_state" {
   bucket        = var.s3_tf_bucket_name
@@ -461,6 +440,11 @@ resource "aws_lambda_function" "my_tf_function" {
     variables = {
       TF_LOG                     = "DEBUG",
       AWS_STS_REGIONAL_ENDPOINTS = "regional"
+      AWS_REGION_CUSTOM          = data.aws_region.current.name
+      S3_BUCKET_NAME             = var.s3_tf_bucket_name
+      DYNAMODB_TABLE             = var.dynamodb_tf_locks_name
+      SECURITY_GROUP_ID          = var.security_group_id != null ? var.security_group_id : ""
+      PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
     }
   }
   depends_on = [
