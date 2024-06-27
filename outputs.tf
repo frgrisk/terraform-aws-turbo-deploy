@@ -10,6 +10,3 @@ output "base_url" {
   description = "Url of the API gateway"
 }
 
-output "ecr_repository_url" {
-  value = aws_ecr_repository.tf_lambda_ecr_repository.repository_url
-}

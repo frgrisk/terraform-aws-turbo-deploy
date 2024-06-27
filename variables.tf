@@ -16,18 +16,6 @@ variable "public_subnet_ids" {
   default     = []
 }
 
-variable "ecr_image_tag_mutability" {
-  description = "Mutability of the ecr image tag"
-  type        = string
-  default     = "MUTABLE"
-}
-
-variable "ecr_scan_on_push" {
-  description = "Describes the actions taken on push"
-  type        = bool
-  default     = true
-}
-
 // not even sure if s3 can have a default name
 variable "s3_tf_bucket_name" {
   description = "name of the s3 bucket for the lambda with terraform binary"
