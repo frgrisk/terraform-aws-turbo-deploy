@@ -391,13 +391,18 @@ resource "null_resource" "download_lambda_zip" {
     download_url = local.download_url
   }
 
-  provisioner "local-exec" {
-    command = <<EOF
-      mkdir -p ${path.module}/lambda_zip &&
-      chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
-      ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.module}/lambda_zip/lambda_function.zip'
-    EOF
-  }
+  # provisioner "local-exec" {
+  #   command = <<EOF
+  #     mkdir -p ${path.module}/lambda_zip &&
+  #     mkdir -p ${path.module}/modified_lambda_zip &&
+  #     chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
+  #     ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.module}/lambda_zip/lambda_function.zip' &&
+  #     unzip ${path.module}/lambda_zip/lambda_function.zip -d ${path.module}/modified_lambda_zip/ &&
+  #     sed -i 's/ami-0d28f30b30f1f3cb9/ami-07ac2451de5d161f6/g' ${path.module}/modified_lambda_zip/config.json &&
+  #     zip -j ${path.module}/modified_lambda_zip/lambda_function.zip ${path.module}/modified_lambda_zip/bootstrap ${path.module}/modified_lambda_zip/config.json &&
+  #     rm ${path.module}/modified_lambda_zip/bootstrap ${path.module}/modified_lambda_zip/config.json
+  #   EOF
+  # }
 
   depends_on = [data.http.latest_release]
 }
@@ -413,6 +418,7 @@ resource "aws_lambda_function" "database_lambda" {
   environment {
     variables = {
       MY_CUSTOM_ENV = "Lambda"
+      MY_AMI_ATTR   = jsonencode(var.ec2_attributes)
     }
   }
 

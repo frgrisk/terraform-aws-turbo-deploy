@@ -1,7 +1,7 @@
 variable "ecr_repository_name" {
   description = "Name of the ecr repository to hold lambda image"
   type        = string
-  default     = "my-tf-function"
+  default     = null
 }
 
 variable "security_group_id" {
@@ -86,4 +86,13 @@ variable "terraform_lambda_function_name" {
   description = "Name of the terraform lambda function"
   type        = string
   default     = "MyTerraformFunction"
+}
+
+variable "ec2_attributes" {
+  description = "EC2 attributes that can be modified (e.g. AMI, Server Type, etc...)"
+  type        = map(list(string))
+  default = {
+    ServerSizes = ["t3.medium"]
+    Amis        = ["ami-07ac2451de5d161f6"]
+  }
 }
