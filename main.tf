@@ -419,6 +419,7 @@ resource "aws_lambda_function" "database_lambda" {
     variables = {
       MY_CUSTOM_ENV = "Lambda"
       MY_AMI_ATTR   = jsonencode(var.ec2_attributes)
+      MY_REGION     = data.aws_region.current.name
     }
   }
 
