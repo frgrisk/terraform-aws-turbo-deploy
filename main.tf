@@ -268,7 +268,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
       },
       {
         Effect   = "Allow",
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:GetObjectTagging"],
         Resource = "arn:aws:s3:::${var.s3_tf_bucket_name}/*"
       },
       {
@@ -464,4 +464,11 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
   event_source_arn  = aws_dynamodb_table.http_crud_backend.stream_arn
   function_name     = aws_lambda_function.my_tf_function.arn
   starting_position = "LATEST"
+}
+
+resource "aws_s3_object" "file_upload" {
+  bucket  = "${aws_s3_bucket.s3_terraform_state.bucket}"
+  key     = "user-data-scripts/user-data.sh"
+  content_type = "text/plain"
+  content = var.user_scripts
 }

@@ -96,3 +96,9 @@ variable "ec2_attributes" {
     Amis        = ["ami-07ac2451de5d161f6"]
   }
 }
+
+variable "user_scripts" {
+  description = "The user data to use when launching the instance"
+  type        = string
+  default     = ""
+}
