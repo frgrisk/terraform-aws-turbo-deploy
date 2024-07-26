@@ -102,3 +102,9 @@ variable "user_scripts" {
   type        = string
   default     = ""
 }
+
+variable "zone_id" {
+  description = "The ID of the hosted zone that will be used for DNS"
+  type        = string
+  default     = null
+}

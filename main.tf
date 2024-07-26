@@ -322,6 +322,8 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:AssociateAddress",
           "ec2:DisassociateAddress",
           "ec2:ReleaseAddress",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeAddressesAttribute",
           // EBS volumes
           "ec2:CreateVolume",
           "ec2:DeleteVolume",
@@ -358,6 +360,25 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
       {
         Effect   = "Allow",
         Action   = ["iam:CreateServiceLinkedRole"],
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = [
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets",
+          "route53:ChangeResourceRecordSets",
+          "route53:GetChange",
+          "route53:ListTagsForResource",
+        ],
+        Resource = [
+          "arn:aws:route53:::hostedzone/${var.zone_id}",
+          "arn:aws:route53:::change/*",
+        ],
+      },
+      {
+        Effect   = "Allow",
+        Action   = ["route53:ListHostedZones"],
         Resource = "*"
       },
     ]
@@ -397,10 +418,6 @@ resource "null_resource" "download_lambda_zip" {
   #     mkdir -p ${path.module}/modified_lambda_zip &&
   #     chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
   #     ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.module}/lambda_zip/lambda_function.zip' &&
-  #     unzip ${path.module}/lambda_zip/lambda_function.zip -d ${path.module}/modified_lambda_zip/ &&
-  #     sed -i 's/ami-0d28f30b30f1f3cb9/ami-07ac2451de5d161f6/g' ${path.module}/modified_lambda_zip/config.json &&
-  #     zip -j ${path.module}/modified_lambda_zip/lambda_function.zip ${path.module}/modified_lambda_zip/bootstrap ${path.module}/modified_lambda_zip/config.json &&
-  #     rm ${path.module}/modified_lambda_zip/bootstrap ${path.module}/modified_lambda_zip/config.json
   #   EOF
   # }
 
@@ -452,6 +469,7 @@ resource "aws_lambda_function" "my_tf_function" {
       DYNAMODB_TABLE             = var.dynamodb_tf_locks_name
       SECURITY_GROUP_ID          = var.security_group_id != null ? var.security_group_id : ""
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
+      HOSTED_ZONE_ID             = var.zone_id
     }
   }
   depends_on = [
