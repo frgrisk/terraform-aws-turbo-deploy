@@ -412,22 +412,21 @@ resource "null_resource" "download_lambda_zip" {
     download_url = local.download_url
   }
 
-  # provisioner "local-exec" {
-  #   command = <<EOF
-  #     mkdir -p ${path.module}/lambda_zip &&
-  #     mkdir -p ${path.module}/modified_lambda_zip &&
-  #     chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
-  #     ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.module}/lambda_zip/lambda_function.zip' &&
-  #   EOF
-  # }
+  provisioner "local-exec" {
+    command = <<EOF
+      mkdir -p ${path.cwd}/lambda_zip &&
+      chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
+      ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.cwd}/lambda_zip/lambda_function.zip'
+    EOF
+  }
 
   depends_on = [data.http.latest_release]
 }
 
 resource "aws_lambda_function" "database_lambda" {
   function_name    = var.database_lambda_function_name
-  filename         = "${path.module}/${var.lambda_function_zip_path}"
-  source_code_hash = fileexists("${path.module}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.module}/${var.lambda_function_zip_path}") : ""
+  filename         = "${path.cwd}/${var.lambda_function_zip_path}"
+  source_code_hash = fileexists("${path.cwd}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.cwd}/${var.lambda_function_zip_path}") : ""
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
