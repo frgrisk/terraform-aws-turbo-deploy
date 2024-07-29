@@ -363,8 +363,8 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
         Resource = "*"
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "route53:GetHostedZone",
           "route53:ListResourceRecordSets",
           "route53:ChangeResourceRecordSets",
@@ -485,8 +485,8 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
 }
 
 resource "aws_s3_object" "file_upload" {
-  bucket  = "${aws_s3_bucket.s3_terraform_state.bucket}"
-  key     = "user-data-scripts/user-data.sh"
+  bucket       = aws_s3_bucket.s3_terraform_state.bucket
+  key          = "user-data-scripts/user-data.sh"
   content_type = "text/plain"
-  content = var.user_scripts
+  content      = var.user_scripts
 }
