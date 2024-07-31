@@ -9,6 +9,12 @@ terraform {
 
 data "aws_region" "current" {}
 
+// retrieve the zone name
+data "aws_route53_zone" "zone_name" {
+  zone_id      = var.zone_id
+  private_zone = false
+}
+
 // create an s3 bucket for lambda tf state
 resource "aws_s3_bucket" "s3_terraform_state" {
   bucket        = var.s3_tf_bucket_name
@@ -372,7 +378,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "route53:ListTagsForResource",
         ],
         Resource = [
-          "arn:aws:route53:::hostedzone/${var.zone_id}",
+          "${data.aws_route53_zone.zone_name.arn}",
           "arn:aws:route53:::change/*",
         ],
       },
@@ -436,6 +442,7 @@ resource "aws_lambda_function" "database_lambda" {
       MY_CUSTOM_ENV = "Lambda"
       MY_AMI_ATTR   = jsonencode(var.ec2_attributes)
       MY_REGION     = data.aws_region.current.name
+      DOMAIN_NAME   = data.aws_route53_zone.zone_name.name
     }
   }
 
