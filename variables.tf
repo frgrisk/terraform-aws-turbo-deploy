@@ -108,3 +108,21 @@ variable "zone_id" {
   type        = string
   default     = null
 }
+
+variable "turbo_deploy_hostname" {
+  description = "The hostname of the web application that will host the frontend, required for cors"
+  type        = string
+  default     = "turbo-deploy"
+}
+
+variable "turbo_deploy_http_port" {
+  description = "The port of the web application that will host the frontend, required for cors. Choose a non privileged port (>1023)"
+  type        = string
+  default     = "4080"
+}
+
+variable "turbo_deploy_https_port" {
+  description = "The port of the web application that will host the frontend, required for cors. Choose a non privileged port (>1023)"
+  type        = string
+  default     = "4443"
+}

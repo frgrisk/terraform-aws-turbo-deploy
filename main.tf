@@ -439,10 +439,13 @@ resource "aws_lambda_function" "database_lambda" {
 
   environment {
     variables = {
-      MY_CUSTOM_ENV = "Lambda"
-      MY_AMI_ATTR   = jsonencode(var.ec2_attributes)
-      MY_REGION     = data.aws_region.current.name
-      DOMAIN_NAME   = data.aws_route53_zone.zone_name.name
+      MY_CUSTOM_ENV        = "Lambda"
+      MY_AMI_ATTR          = jsonencode(var.ec2_attributes)
+      MY_REGION            = data.aws_region.current.name
+      ROUTE53_DOMAIN_NAME  = data.aws_route53_zone.zone_name.name
+      WEBSERVER_HOSTNAME   = var.turbo_deploy_hostname
+      WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
+      WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
     }
   }
 
