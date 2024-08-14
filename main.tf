@@ -357,6 +357,8 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:RequestSpotInstances",
           "ec2:CancelSpotInstanceRequests",
           "ec2:DescribeSpotPriceHistory",
+          // IAM profiles
+          "iam:PassRole"
         ],
         Resource = "*"
       },
