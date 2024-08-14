@@ -308,6 +308,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:DescribeInstanceTypes",
           "ec2:CreateTags",
           "ec2:DescribeTags",
+          "ec2:DeleteTags",
           // Network interfaces
           "ec2:DescribeVpcs",
           "ec2:CreateNetworkInterface",
