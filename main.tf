@@ -509,3 +509,46 @@ resource "aws_key_pair" "admin_key" {
   key_name   = "admin_key"
   public_key = var.public_key
 }
+
+resource "aws_iam_instance_profile" "turbodeploy_profile" {
+  name = "turbodeploy-ec2-profile"
+  role = aws_iam_role.turbo_deploy_instances.name
+}
+
+resource "aws_iam_role" "turbo_deploy_instances" {
+  name = "TurboDeployEC2Describe"
+  path = "/"
+
+  inline_policy {
+    name = "ec2describe"
+    policy = jsonencode(
+      {
+        Statement = [
+          {
+            Action   = "ec2:Describe*"
+            Effect   = "Allow"
+            Resource = "*"
+            Sid      = ""
+          },
+        ]
+        Version = "2012-10-17"
+      }
+    )
+  }
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+               "Service": "ec2.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
+}
