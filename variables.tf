@@ -126,3 +126,9 @@ variable "turbo_deploy_https_port" {
   type        = string
   default     = "4443"
 }
+
+variable "public_key" {
+  description = "The default public key to be added to all deployed instances"
+  type        = string
+  default     = null
+}

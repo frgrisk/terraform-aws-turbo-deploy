@@ -345,6 +345,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:DeregisterImage",
           "ec2:DescribeImages",
           // Key pairs
+          "ec2:ImportKeyPair",
           "ec2:CreateKeyPair",
           "ec2:DeleteKeyPair",
           "ec2:DescribeKeyPairs",
@@ -479,6 +480,7 @@ resource "aws_lambda_function" "my_tf_function" {
       SECURITY_GROUP_ID          = var.security_group_id != null ? var.security_group_id : ""
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
       HOSTED_ZONE_ID             = var.zone_id
+      PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
     }
   }
   depends_on = [
@@ -498,4 +500,9 @@ resource "aws_s3_object" "file_upload" {
   key          = "user-data-scripts/user-data.sh"
   content_type = "text/plain"
   content      = var.user_scripts
+}
+
+resource "aws_key_pair" "admin_key" {
+  key_name   = "admin_key"
+  public_key = var.public_key
 }
