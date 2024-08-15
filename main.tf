@@ -358,7 +358,8 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:CancelSpotInstanceRequests",
           "ec2:DescribeSpotPriceHistory",
           // IAM profiles
-          "iam:PassRole"
+          "iam:GetInstanceProfile",
+          "iam:PassRole",
         ],
         Resource = "*"
       },
@@ -484,6 +485,7 @@ resource "aws_lambda_function" "my_tf_function" {
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
       HOSTED_ZONE_ID             = var.zone_id
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
+      PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
     }
   }
   depends_on = [
