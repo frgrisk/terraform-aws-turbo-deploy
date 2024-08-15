@@ -520,6 +520,10 @@ resource "aws_iam_instance_profile" "turbodeploy_profile" {
 resource "aws_iam_role" "turbo_deploy_instances" {
   name = "TurboDeployEC2Describe"
   path = "/"
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+  ]
 
   inline_policy {
     name = "ec2describe"
