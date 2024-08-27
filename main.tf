@@ -441,6 +441,7 @@ resource "aws_lambda_function" "database_lambda" {
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
+  timeout          = 15
 
   environment {
     variables = {
