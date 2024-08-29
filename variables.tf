@@ -89,11 +89,11 @@ variable "terraform_lambda_function_name" {
 }
 
 variable "ec2_attributes" {
-  description = "EC2 attributes that can be modified (e.g. AMI, Server Type, etc...)"
+  description = "EC2 attributes that can be modified (e.g. AMI, Server Type)"
   type        = map(list(string))
   default = {
     ServerSizes = ["t3.medium"]
-    Amis        = ["ami-07ac2451de5d161f6"]
+    Amis        = [""]
   }
 }
 
