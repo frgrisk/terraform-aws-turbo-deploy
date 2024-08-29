@@ -9,6 +9,12 @@ terraform {
 
 data "aws_region" "current" {}
 
+// retrieve the zone name
+data "aws_route53_zone" "zone_name" {
+  zone_id      = var.zone_id
+  private_zone = false
+}
+
 // create an s3 bucket for lambda tf state
 resource "aws_s3_bucket" "s3_terraform_state" {
   bucket        = var.s3_tf_bucket_name
@@ -268,7 +274,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
       },
       {
         Effect   = "Allow",
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:GetObjectTagging"],
         Resource = "arn:aws:s3:::${var.s3_tf_bucket_name}/*"
       },
       {
@@ -302,6 +308,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:DescribeInstanceTypes",
           "ec2:CreateTags",
           "ec2:DescribeTags",
+          "ec2:DeleteTags",
           // Network interfaces
           "ec2:DescribeVpcs",
           "ec2:CreateNetworkInterface",
@@ -322,6 +329,8 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:AssociateAddress",
           "ec2:DisassociateAddress",
           "ec2:ReleaseAddress",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeAddressesAttribute",
           // EBS volumes
           "ec2:CreateVolume",
           "ec2:DeleteVolume",
@@ -337,6 +346,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:DeregisterImage",
           "ec2:DescribeImages",
           // Key pairs
+          "ec2:ImportKeyPair",
           "ec2:CreateKeyPair",
           "ec2:DeleteKeyPair",
           "ec2:DescribeKeyPairs",
@@ -360,6 +370,25 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
         Action   = ["iam:CreateServiceLinkedRole"],
         Resource = "*"
       },
+      {
+        Effect = "Allow",
+        Action = [
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets",
+          "route53:ChangeResourceRecordSets",
+          "route53:GetChange",
+          "route53:ListTagsForResource",
+        ],
+        Resource = [
+          "${data.aws_route53_zone.zone_name.arn}",
+          "arn:aws:route53:::change/*",
+        ],
+      },
+      {
+        Effect   = "Allow",
+        Action   = ["route53:ListHostedZones"],
+        Resource = "*"
+      },
     ]
   })
 }
@@ -379,7 +408,7 @@ resource "aws_iam_role_policy_attachment" "golang_lambda_policy_attach" {
 // download lambda_function.zip from turbo deploy v0.1.0 pre-release
 
 data "http" "latest_release" {
-  url = "https://api.github.com/repos/frgrisk/turbo-deploy/releases/tags/v0.1.0"
+  url = "https://api.github.com/repos/frgrisk/turbo-deploy/releases/tags/v0.1.2"
 }
 
 locals {
@@ -393,9 +422,9 @@ resource "null_resource" "download_lambda_zip" {
 
   provisioner "local-exec" {
     command = <<EOF
-      mkdir -p ${path.module}/lambda_zip &&
+      mkdir -p ${path.cwd}/lambda_zip &&
       chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
-      ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.module}/lambda_zip/lambda_function.zip'
+      ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.cwd}/lambda_zip/lambda_function.zip'
     EOF
   }
 
@@ -404,15 +433,21 @@ resource "null_resource" "download_lambda_zip" {
 
 resource "aws_lambda_function" "database_lambda" {
   function_name    = var.database_lambda_function_name
-  filename         = "${path.module}/${var.lambda_function_zip_path}"
-  source_code_hash = fileexists("${path.module}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.module}/${var.lambda_function_zip_path}") : ""
+  filename         = "${path.cwd}/${var.lambda_function_zip_path}"
+  source_code_hash = fileexists("${path.cwd}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.cwd}/${var.lambda_function_zip_path}") : ""
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
 
   environment {
     variables = {
-      MY_CUSTOM_ENV = "Lambda"
+      MY_CUSTOM_ENV        = "Lambda"
+      MY_AMI_ATTR          = jsonencode(var.ec2_attributes)
+      MY_REGION            = data.aws_region.current.name
+      ROUTE53_DOMAIN_NAME  = data.aws_route53_zone.zone_name.name
+      WEBSERVER_HOSTNAME   = var.turbo_deploy_hostname
+      WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
+      WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
     }
   }
 
@@ -445,6 +480,8 @@ resource "aws_lambda_function" "my_tf_function" {
       DYNAMODB_TABLE             = var.dynamodb_tf_locks_name
       SECURITY_GROUP_ID          = var.security_group_id != null ? var.security_group_id : ""
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
+      HOSTED_ZONE_ID             = var.zone_id
+      PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
     }
   }
   depends_on = [
@@ -457,4 +494,16 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
   event_source_arn  = aws_dynamodb_table.http_crud_backend.stream_arn
   function_name     = aws_lambda_function.my_tf_function.arn
   starting_position = "LATEST"
+}
+
+resource "aws_s3_object" "file_upload" {
+  bucket       = aws_s3_bucket.s3_terraform_state.bucket
+  key          = "user-data-scripts/user-data.sh"
+  content_type = "text/plain"
+  content      = var.user_scripts
+}
+
+resource "aws_key_pair" "admin_key" {
+  key_name   = "admin_key"
+  public_key = var.public_key
 }

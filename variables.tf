@@ -1,7 +1,7 @@
 variable "ecr_repository_name" {
   description = "Name of the ecr repository to hold lambda image"
   type        = string
-  default     = "my-tf-function"
+  default     = null
 }
 
 variable "security_group_id" {
@@ -86,4 +86,49 @@ variable "terraform_lambda_function_name" {
   description = "Name of the terraform lambda function"
   type        = string
   default     = "MyTerraformFunction"
+}
+
+variable "ec2_attributes" {
+  description = "EC2 attributes that can be modified (e.g. AMI, Server Type)"
+  type        = map(list(string))
+  default = {
+    ServerSizes = ["t3.medium"]
+    Amis        = [""]
+  }
+}
+
+variable "user_scripts" {
+  description = "The user data to use when launching the instance"
+  type        = string
+  default     = ""
+}
+
+variable "zone_id" {
+  description = "The ID of the hosted zone that will be used for DNS"
+  type        = string
+  default     = null
+}
+
+variable "turbo_deploy_hostname" {
+  description = "The hostname of the web application that will host the frontend, required for cors"
+  type        = string
+  default     = "turbo-deploy"
+}
+
+variable "turbo_deploy_http_port" {
+  description = "The port of the web application that will host the frontend, required for cors. Choose a non privileged port (>1023)"
+  type        = string
+  default     = "4080"
+}
+
+variable "turbo_deploy_https_port" {
+  description = "The port of the web application that will host the frontend, required for cors. Choose a non privileged port (>1023)"
+  type        = string
+  default     = "4443"
+}
+
+variable "public_key" {
+  description = "The default public key to be added to all deployed instances"
+  type        = string
+  default     = null
 }
