@@ -38,8 +38,8 @@ Before deploying the Turbo Infrastructure, there are a set of AWS resources that
 
     3. Change the following values of the deploy_lambda.sh script to your environment
 
-        - ECR_REPOSITORY_NAME=\<NAME OF YOUR REPOSITORY\>
-        - AWS_REGION=\<REGION WHERE THE INFRASTRUCTURE WILL BE DEPLOYED\>
+        - ECR_REPOSITORY_NAME=\<NAME OF YOUR REGISTRY\>
+        - AWS_REGION=\<AWS REGION WHERE THE INFRASTRUCTURE WILL BE DEPLOYED\>
 
     4. Configure the aws account keys in your terminal
 
@@ -61,7 +61,7 @@ While there are a few variables that can be configured through the module, the b
 
 - ecr_repository_name
 
-    The name of the ecr_repository that you created and contains the image for the lambda function
+    The name of the ecr registry that you created and contains the image for the lambda function
 - s3_tf_bucket_name
 
     The name that you will give to the S3 bucket (must be unique)
