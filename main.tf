@@ -408,7 +408,7 @@ resource "aws_iam_role_policy_attachment" "golang_lambda_policy_attach" {
 // download lambda_function.zip from turbo deploy v0.1.0 pre-release
 
 data "http" "latest_release" {
-  url = "https://api.github.com/repos/frgrisk/turbo-deploy/releases/tags/v0.1.1"
+  url = "https://api.github.com/repos/frgrisk/turbo-deploy/releases/tags/v0.1.2"
 }
 
 locals {
