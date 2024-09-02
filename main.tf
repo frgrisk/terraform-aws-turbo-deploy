@@ -357,6 +357,9 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:RequestSpotInstances",
           "ec2:CancelSpotInstanceRequests",
           "ec2:DescribeSpotPriceHistory",
+          // IAM profiles
+          "iam:GetInstanceProfile",
+          "iam:PassRole",
         ],
         Resource = "*"
       },
@@ -438,6 +441,7 @@ resource "aws_lambda_function" "database_lambda" {
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
+  timeout          = 15
 
   environment {
     variables = {
@@ -482,6 +486,7 @@ resource "aws_lambda_function" "my_tf_function" {
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
       HOSTED_ZONE_ID             = var.zone_id
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
+      PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
     }
   }
   depends_on = [
@@ -506,4 +511,51 @@ resource "aws_s3_object" "file_upload" {
 resource "aws_key_pair" "admin_key" {
   key_name   = "admin_key"
   public_key = var.public_key
+}
+
+resource "aws_iam_instance_profile" "turbodeploy_profile" {
+  name = "turbodeploy-ec2-profile"
+  role = aws_iam_role.turbo_deploy_instances.name
+}
+
+resource "aws_iam_role" "turbo_deploy_instances" {
+  name = "TurboDeployEC2Describe"
+  path = "/"
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+  ]
+
+  inline_policy {
+    name = "ec2describe"
+    policy = jsonencode(
+      {
+        Statement = [
+          {
+            Action   = "ec2:Describe*"
+            Effect   = "Allow"
+            Resource = "*"
+            Sid      = ""
+          },
+        ]
+        Version = "2012-10-17"
+      }
+    )
+  }
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+               "Service": "ec2.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
 }
