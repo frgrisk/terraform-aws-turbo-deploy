@@ -132,3 +132,42 @@ variable "public_key" {
   type        = string
   default     = null
 }
+
+# filter types can be found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html
+variable "image_filter_groups" {
+  description = "Filter groups for different images"
+  type = map(list(object({
+    name   = string
+    values = list(string)
+  })))
+  default = {
+    "redhat-ami" = [
+      {
+        name   = "is-public"
+        values = ["true"]
+      },
+      {
+        name   = "name"
+        values = ["AlmaLinux OS*"]
+      },
+      {
+        name   = "state"
+        values = ["available"]
+      }
+    ]
+    "user-ami" = [
+      {
+        name   = "is-public"
+        values = ["false"]
+      },
+      {
+        name   = "tag:DeployedBy"
+        values = ["turbo-deploy"]
+      },
+      {
+        name   = "state"
+        values = ["available"]
+      }
+    ]
+  }
+}
