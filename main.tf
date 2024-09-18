@@ -422,7 +422,7 @@ data "http" "lambda_zip" {
   url = local.download_url
 }
 
-resource "local_file" "lambda_zip" {
+resource "local_sensitive_file" "lambda_zip" {
   filename = "${path.module}/lambda_function.zip"
 
   content_base64 = data.http.lambda_zip.response_body_base64
@@ -430,8 +430,8 @@ resource "local_file" "lambda_zip" {
 
 resource "aws_lambda_function" "database_lambda" {
   function_name    = var.database_lambda_function_name
-  filename         = local_file.lambda_zip.filename
-  source_code_hash = local_file.lambda_zip.content_base64sha512
+  filename         = local_sensitive_file.lambda_zip.filename
+  source_code_hash = local_sensitive_file.lambda_zip.content_base64sha512
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
