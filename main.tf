@@ -422,10 +422,10 @@ data "http" "lambda_zip" {
   url = local.download_url
 }
 
-data "local_file" "lambda_zip" {
+resource "local_file" "lambda_zip" {
   filename = "${path.module}/lambda_function.zip"
 
-  content = data.http.lambda_zip.response_body
+  content_base64 = data.http.lambda_zip.response_body_base64
 }
 
 resource "aws_lambda_function" "database_lambda" {
