@@ -430,8 +430,8 @@ resource "local_file" "lambda_zip" {
 
 resource "aws_lambda_function" "database_lambda" {
   function_name    = var.database_lambda_function_name
-  filename         = data.local_file.lambda_zip.filename
-  source_code_hash = data.local_file.lambda_zip.lambda_zip.output_base64sha256
+  filename         = local_file.lambda_zip.filename
+  source_code_hash = local_file.lambda_zip.content_base64sha512
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
