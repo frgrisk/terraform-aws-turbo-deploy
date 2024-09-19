@@ -40,3 +40,4 @@ turbo-deploy
 *.zip
 
 .terraform.lock.hcl
+.vscode
