@@ -446,6 +446,7 @@ resource "aws_lambda_function" "database_lambda" {
       WEBSERVER_HOSTNAME   = var.turbo_deploy_hostname
       WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
       WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
+      AMI_FILTERS          = base64gzip(jsonencode(var.image_filter_groups))
     }
   }
 }
