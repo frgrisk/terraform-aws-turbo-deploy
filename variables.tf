@@ -99,8 +99,8 @@ variable "ec2_attributes" {
 
 variable "user_scripts" {
   description = "The user data to use when launching the instance"
-  type        = string
-  default     = ""
+  type        = map(string)
+  default     = null
 }
 
 variable "zone_id" {

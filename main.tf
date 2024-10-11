@@ -452,6 +452,7 @@ resource "aws_lambda_function" "database_lambda" {
       WEBSERVER_HOSTNAME   = var.turbo_deploy_hostname
       WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
       WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
+      USER_SCRIPTS         = jsonencode(keys(var.user_scripts))
     }
   }
 
@@ -502,10 +503,18 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
 }
 
 resource "aws_s3_object" "file_upload" {
+  for_each     = var.user_scripts
   bucket       = aws_s3_bucket.s3_terraform_state.bucket
-  key          = "user-data-scripts/user-data.sh"
+  key          = "user-data-scripts/${each.key}.sh"
   content_type = "text/plain"
-  content      = var.user_scripts
+  content      = each.value
+}
+
+resource "aws_s3_object" "upload_template" {
+  bucket       = aws_s3_bucket.s3_terraform_state.bucket
+  key          = "user-data-template/template.sh"
+  content_type = "text/plain"
+  source       = "${path.module}/user_data/template.sh"
 }
 
 resource "aws_key_pair" "admin_key" {
