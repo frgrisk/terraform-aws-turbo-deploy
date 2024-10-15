@@ -15,6 +15,12 @@ touch /tmp/user_data_scripts/full_script/full_script.sh
 #Change string to array
 user_data_string="${user_data}"
 
+if [ -z "$user_data_string" ]
+then
+    echo "No userdata script was specified, exiting userdata execution..."
+    exit 1
+fi
+
 IFS=',' read -a user_data_array <<< "$user_data_string"
 
 #Retrieve user data scripts
