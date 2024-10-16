@@ -2,9 +2,13 @@
 #Install aws cli
 echo "Installing packages..."
 dnf install -y unzip
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-unzip /tmp/awscliv2.zip -d /tmp
-/tmp/aws/./install
+if ! command -v aws > /dev/null; then
+  echo "The AWS CLI is not installed. Installing..."
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -i).zip" -o "awscliv2.zip"
+  unzip awscliv2.zip
+  ./aws/install
+  rm -rfv aws*
+fi
 
 #Create necessary folders/files
 echo "Creating files and folders..."
