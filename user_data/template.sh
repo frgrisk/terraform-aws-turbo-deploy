@@ -22,7 +22,7 @@ user_data_string="${user_data}"
 if [ -z "$user_data_string" ]
 then
     echo "No userdata script was specified, exiting userdata execution..."
-    exit 1
+    exit 0
 fi
 
 IFS=',' read -a user_data_array <<< "$user_data_string"
