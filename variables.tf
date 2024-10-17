@@ -140,34 +140,5 @@ variable "image_filter_groups" {
     name   = string
     values = list(string)
   })))
-  default = {
-    "redhat-ami" = [
-      {
-        name   = "is-public"
-        values = ["true"]
-      },
-      {
-        name   = "name"
-        values = ["AlmaLinux OS*"]
-      },
-      {
-        name   = "state"
-        values = ["available"]
-      }
-    ]
-    "user-ami" = [
-      {
-        name   = "is-public"
-        values = ["false"]
-      },
-      {
-        name   = "tag:DeployedBy"
-        values = ["turbo-deploy"]
-      },
-      {
-        name   = "state"
-        values = ["available"]
-      }
-    ]
-  }
+  default = null
 }
