@@ -140,5 +140,20 @@ variable "image_filter_groups" {
     name   = string
     values = list(string)
   })))
-  default = null
+  default = {
+    "alma-ami" = [
+      {
+        name   = "is-public"
+        values = ["true"]
+      },
+      {
+        name   = "name"
+        values = ["AlmaLinux OS*"]
+      },
+      {
+        name   = "state"
+        values = ["available"]
+      }
+    ]
+  }
 }
