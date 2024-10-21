@@ -33,7 +33,7 @@ resource "aws_dynamodb_table" "dynamoDB_terraform_locks" {
   }
 }
 
-// api gateway 
+// api gateway
 resource "aws_api_gateway_rest_api" "my_api_gateway" {
   name        = var.api_gateway_name
   description = "API Gateway for Golang Lambda Function"
@@ -418,26 +418,20 @@ locals {
   download_url = jsondecode(data.http.latest_release.response_body).assets[0].browser_download_url
 }
 
-resource "null_resource" "download_lambda_zip" {
-  triggers = {
-    download_url = local.download_url
-  }
+data "http" "lambda_zip" {
+  url = local.download_url
+}
 
-  provisioner "local-exec" {
-    command = <<EOF
-      mkdir -p ${path.cwd}/lambda_zip &&
-      chmod +x ${path.module}/lambda_zip/download_lambda.sh &&
-      ${path.module}/lambda_zip/download_lambda.sh '${local.download_url}' '${path.cwd}/lambda_zip/lambda_function.zip'
-    EOF
-  }
+resource "local_sensitive_file" "lambda_zip" {
+  filename = "${path.module}/lambda_function.zip"
 
-  depends_on = [data.http.latest_release]
+  content_base64 = data.http.lambda_zip.response_body_base64
 }
 
 resource "aws_lambda_function" "database_lambda" {
   function_name    = var.database_lambda_function_name
-  filename         = "${path.cwd}/${var.lambda_function_zip_path}"
-  source_code_hash = fileexists("${path.cwd}/${var.lambda_function_zip_path}") ? filebase64sha256("${path.cwd}/${var.lambda_function_zip_path}") : ""
+  filename         = local_sensitive_file.lambda_zip.filename
+  source_code_hash = local_sensitive_file.lambda_zip.content_base64sha512
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
@@ -455,9 +449,6 @@ resource "aws_lambda_function" "database_lambda" {
       USER_SCRIPTS         = jsonencode(keys(var.user_scripts))
     }
   }
-
-  depends_on = [null_resource.download_lambda_zip]
-
 }
 
 data "aws_ecr_repository" "my_tf_function" {
