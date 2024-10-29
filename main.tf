@@ -502,13 +502,6 @@ resource "aws_s3_object" "file_upload" {
   content      = each.value
 }
 
-resource "aws_s3_object" "upload_template" {
-  bucket       = aws_s3_bucket.s3_terraform_state.bucket
-  key          = "user-data-template/template.sh"
-  content_type = "text/plain"
-  source       = "${path.module}/user_data/template.sh"
-}
-
 resource "aws_key_pair" "admin_key" {
   key_name   = "admin_key"
   public_key = var.public_key
