@@ -479,6 +479,7 @@ resource "aws_lambda_function" "my_tf_function" {
       HOSTED_ZONE_ID             = var.zone_id
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
       PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
+      USER_SCRIPTS               = jsonencode(keys(var.user_scripts))
     }
   }
   depends_on = [
