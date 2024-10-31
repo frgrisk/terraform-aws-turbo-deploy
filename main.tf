@@ -446,6 +446,7 @@ resource "aws_lambda_function" "database_lambda" {
       WEBSERVER_HOSTNAME   = var.turbo_deploy_hostname
       WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
       WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
+      USER_SCRIPTS         = jsonencode(keys(var.user_scripts))
       AMI_FILTERS          = base64gzip(jsonencode(var.image_filter_groups))
     }
   }
@@ -479,6 +480,7 @@ resource "aws_lambda_function" "my_tf_function" {
       HOSTED_ZONE_ID             = var.zone_id
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
       PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
+      USER_SCRIPTS               = jsonencode(keys(var.user_scripts))
     }
   }
   depends_on = [
@@ -494,10 +496,11 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
 }
 
 resource "aws_s3_object" "file_upload" {
+  for_each     = var.user_scripts
   bucket       = aws_s3_bucket.s3_terraform_state.bucket
-  key          = "user-data-scripts/user-data.sh"
+  key          = "user-data-scripts/${each.key}.sh"
   content_type = "text/plain"
-  content      = var.user_scripts
+  content      = each.value
 }
 
 resource "aws_key_pair" "admin_key" {
