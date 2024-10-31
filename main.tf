@@ -494,12 +494,19 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
   starting_position = "LATEST"
 }
 
-resource "aws_s3_object" "file_upload" {
+resource "aws_s3_object" "userdata_upload" {
   for_each     = var.user_scripts
   bucket       = aws_s3_bucket.s3_terraform_state.bucket
   key          = "user-data-scripts/${each.key}.sh"
   content_type = "text/plain"
   content      = each.value
+}
+
+resource "aws_s3_object" "base_userdata_upload" {
+  bucket       = aws_s3_bucket.s3_terraform_state.bucket
+  key          = "user-data-base/base.sh"
+  content_type = "text/plain"
+  content      = var.base_script
 }
 
 resource "aws_key_pair" "admin_key" {

@@ -98,9 +98,19 @@ variable "ec2_attributes" {
 }
 
 variable "user_scripts" {
-  description = "The user data to use when launching the instance"
+  description = "The userdata to display as choices and use when launching the instance"
   type        = map(string)
   default     = null
+}
+
+#Placing a default value to ensure that cloud-init does not error out when no user data is provided
+variable "base_script" {
+  description = "The base userdata script to use when launching the instance"
+  type        = string
+  default     = <<-EOF
+#!/bin/bash
+echo "No base script was provided for execution"
+EOF
 }
 
 variable "zone_id" {
