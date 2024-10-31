@@ -447,6 +447,7 @@ resource "aws_lambda_function" "database_lambda" {
       WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
       WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
       USER_SCRIPTS         = jsonencode(keys(var.user_scripts))
+      AMI_FILTERS          = base64gzip(jsonencode(var.image_filter_groups))
     }
   }
 }
