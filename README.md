@@ -74,6 +74,9 @@ While there are a few variables that can be configured through the module, the b
 - ec2_attributes
 
     By default, server sizes are automatically set but not AMIs and so you need to configure them
+- image_filter_groups
+
+    The AMIs that are listed in the Turbo Deploy interface is configured through the use of filters that are used by the AWS API, you can look through the full list of filters in this [AWS documentation](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html)
 
 ## Example
 
@@ -93,6 +96,36 @@ module "my_turbo_module" {
   ec2_attributes = {
     ServerSizes = ["t3.medium", "t3.large", "t3.xlarge"]
     Amis        = ["ami-0583d8c7a9c35822c", "ami-06338d230ffc3fc0c"]
+  }
+  image_filter_groups = {
+    "alma-ami" = [
+      {
+        name   = "is-public"
+        values = ["true"]
+      },
+      {
+        name   = "name"
+        values = ["AlmaLinux OS*"]
+      },
+      {
+        name   = "state"
+        values = ["available"]
+      }
+    ]
+    "redhat-ami" = [
+      {
+        name   = "is-public"
+        values = ["true"]
+      },
+      {
+        name   = "name"
+        values = ["RHEL-9.4.0*"]
+      },
+      {
+        name   = "state"
+        values = ["available"]
+      }
+    ]
   }
 }
 ```
