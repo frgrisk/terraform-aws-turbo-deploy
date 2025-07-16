@@ -69,7 +69,12 @@ resource "aws_api_gateway_integration" "lambda" {
 resource "aws_api_gateway_deployment" "my_api_deployment" {
   depends_on  = [aws_api_gateway_integration.lambda]
   rest_api_id = aws_api_gateway_rest_api.my_api_gateway.id
-  stage_name  = "test"
+}
+
+resource "aws_api_gateway_stage" "dev" {
+  deployment_id = aws_api_gateway_deployment.my_api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.my_api_gateway.id
+  stage_name    = "dev"
 }
 
 // by default no two aws services have access to one another, hence explicit permission must be granted
@@ -521,43 +526,49 @@ resource "aws_iam_instance_profile" "turbodeploy_profile" {
 }
 
 resource "aws_iam_role" "turbo_deploy_instances" {
-  name = "TurboDeployEC2Describe"
-  path = "/"
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
-    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
-  ]
-
-  inline_policy {
-    name = "ec2describe"
-    policy = jsonencode(
-      {
-        Statement = [
-          {
-            Action   = "ec2:Describe*"
-            Effect   = "Allow"
-            Resource = "*"
-            Sid      = ""
-          },
-        ]
-        Version = "2012-10-17"
-      }
-    )
-  }
-
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-               "Service": "ec2.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-        }
-    ]
+  name               = "TurboDeployEC2Describe"
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.instance_assume_role_policy.json
 }
-EOF
+
+data "aws_iam_policy_document" "instance_assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "turbo_instance_policy" {
+  name = "turbo_instance_policy"
+  role = aws_iam_role.turbo_deploy_instances.id
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:Describe*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "S3ReadonOnlyAccess" {
+  role       = aws_iam_role.turbo_deploy_instances.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
+
+
+resource "aws_iam_role_policy_attachment" "CloudWatchAgentServerPolicy" {
+  role       = aws_iam_role.turbo_deploy_instances.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
