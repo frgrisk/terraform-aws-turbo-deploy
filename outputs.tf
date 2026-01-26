@@ -6,7 +6,7 @@ output "terraform_locks_table_name" {
 }
 
 output "base_url" {
-  value       = aws_api_gateway_deployment.my_api_deployment.invoke_url
+  value       = aws_api_gateway_stage.dev.invoke_url
   description = "Url of the API gateway"
 }
 

@@ -62,7 +62,7 @@ resource "aws_api_gateway_integration" "lambda" {
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.database_lambda.invoke_arn
+  uri                     = aws_lambda_function.lambda_api_backend.invoke_arn
 }
 
 // deploy the api gatway to activate the configuration and expose the API at a URL that can be used
@@ -81,7 +81,7 @@ resource "aws_api_gateway_stage" "dev" {
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.database_lambda.function_name
+  function_name = aws_lambda_function.lambda_api_backend.function_name
   principal     = "apigateway.amazonaws.com"
 
   # The /*/* portion grants access from any method on any resource
@@ -94,7 +94,6 @@ resource "aws_lambda_permission" "apigw" {
 resource "aws_api_gateway_base_path_mapping" "base_path_mapping" {
   count       = var.api_gateway_domain_name != null && var.api_gateway_domain_name != "" ? 1 : 0
   api_id      = aws_api_gateway_rest_api.my_api_gateway.id
-  stage_name  = aws_api_gateway_deployment.my_api_deployment.stage_name
   domain_name = var.api_gateway_domain_name
 }
 
