@@ -455,7 +455,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
   role          = aws_iam_role.terraform_lambda_role.arn
   function_name = var.terraform_lambda_function_name
   timeout       = 600
-  memory_size   = 512
+  memory_size   = 2048
 
   ephemeral_storage {
     size = 5612
