@@ -47,7 +47,7 @@ Before deploying the Turbo Infrastructure, there are a set of AWS resources that
 
     5. Run the script to create and push the image
 
-        `./deploy_lambda.sh`
+        `./deploy_ecr_image.sh`
   
 - S3 Bucket and associated zip file
 
