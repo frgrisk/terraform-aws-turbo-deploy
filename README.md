@@ -88,7 +88,7 @@ While there are a few variables that can be configured through the module, the b
     The name of the ecr registry that you created and contains the image for the lambda function
 - s3_golang_bucket_name
 
-    The name that you will give to the S3 bucket that contains the zip file for the lambda function
+    The name of the S3 bucket that you created and contains the zip file for the lambda function
 - s3_golang_bucket_key
 
     The path to the zip file located in the S3 bucket specified in `s3_golang_bucket_name`
