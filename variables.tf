@@ -22,6 +22,16 @@ variable "s3_tf_bucket_name" {
   type        = string
 }
 
+variable "s3_golang_bucket_name" {
+  description = "name of the s3 bucket for the lambda with golang binary"
+  type        = string
+}
+
+variable "s3_golang_bucket_key" {
+  description = "key of the s3 object for the lambda with golang binary"
+  type        = string
+}
+
 variable "s3_force_destroy" {
   description = "option to force destroy s3"
   type        = bool
@@ -58,7 +68,7 @@ variable "api_gateway_domain_name" {
   default     = ""
 }
 
-variable "database_lambda_function_name" {
+variable "lambda_api_backend_name" {
   description = "Name of the lambda function stationed between API gateway and dynamoDB"
   type        = string
   default     = "MyGolangLambdaFunction"

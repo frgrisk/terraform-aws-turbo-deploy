@@ -62,7 +62,7 @@ resource "aws_api_gateway_integration" "lambda" {
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.database_lambda.invoke_arn
+  uri                     = aws_lambda_function.lambda_api_backend.invoke_arn
 }
 
 // deploy the api gatway to activate the configuration and expose the API at a URL that can be used
@@ -81,7 +81,7 @@ resource "aws_api_gateway_stage" "dev" {
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.database_lambda.function_name
+  function_name = aws_lambda_function.lambda_api_backend.function_name
   principal     = "apigateway.amazonaws.com"
 
   # The /*/* portion grants access from any method on any resource
@@ -94,7 +94,6 @@ resource "aws_lambda_permission" "apigw" {
 resource "aws_api_gateway_base_path_mapping" "base_path_mapping" {
   count       = var.api_gateway_domain_name != null && var.api_gateway_domain_name != "" ? 1 : 0
   api_id      = aws_api_gateway_rest_api.my_api_gateway.id
-  stage_name  = aws_api_gateway_deployment.my_api_deployment.stage_name
   domain_name = var.api_gateway_domain_name
 }
 
@@ -294,7 +293,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ecr:BatchGetImage",
           "ecr:BatchCheckLayerAvailability",
         ],
-        # Resource = "${data.aws_ecr_repository.my_tf_function.arn}"
+        # Resource = "${data.aws_ecr_repository.lambda_terraform_runner.arn}"
         Resource = "*"
       },
       {
@@ -413,30 +412,18 @@ resource "aws_iam_role_policy_attachment" "golang_lambda_policy_attach" {
   policy_arn = aws_iam_policy.golang_lambda_policy.arn
 }
 
-// download lambda_function.zip from turbo deploy v0.1.0 pre-release
-
-data "http" "latest_release" {
-  url = "https://api.github.com/repos/frgrisk/turbo-deploy/releases/tags/v0.1.3"
+# Query the existing S3 object
+data "aws_s3_object" "lambda_package" {
+  bucket = var.s3_golang_bucket_name
+  key    = var.s3_golang_bucket_key
 }
 
-locals {
-  download_url = jsondecode(data.http.latest_release.response_body).assets[0].browser_download_url
-}
-
-data "http" "lambda_zip" {
-  url = local.download_url
-}
-
-resource "local_sensitive_file" "lambda_zip" {
-  filename = "${path.module}/lambda_function.zip"
-
-  content_base64 = data.http.lambda_zip.response_body_base64
-}
-
-resource "aws_lambda_function" "database_lambda" {
-  function_name    = var.database_lambda_function_name
-  filename         = local_sensitive_file.lambda_zip.filename
-  source_code_hash = local_sensitive_file.lambda_zip.content_base64sha512
+#This lambda resource is the main backend logic for handling incoming API requests and managing EC2 instances
+resource "aws_lambda_function" "lambda_api_backend" {
+  function_name    = var.lambda_api_backend_name
+  s3_bucket        = var.s3_golang_bucket_name
+  s3_key           = var.s3_golang_bucket_key
+  source_code_hash = data.aws_s3_object.lambda_package.etag
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   role             = aws_iam_role.golang_lambda_exec.arn
@@ -457,18 +444,18 @@ resource "aws_lambda_function" "database_lambda" {
   }
 }
 
-data "aws_ecr_repository" "my_tf_function" {
+data "aws_ecr_repository" "lambda_terraform_runner" {
   name = var.ecr_repository_name
 }
 
-
-resource "aws_lambda_function" "my_tf_function" {
+# This lambda resource is responsible for executing Terraform operations using a Docker image stored in ECR
+resource "aws_lambda_function" "lambda_terraform_runner" {
   package_type  = "Image"
-  image_uri     = "${data.aws_ecr_repository.my_tf_function.repository_url}:latest"
+  image_uri     = "${data.aws_ecr_repository.lambda_terraform_runner.repository_url}:latest"
   role          = aws_iam_role.terraform_lambda_role.arn
   function_name = var.terraform_lambda_function_name
   timeout       = 600
-  memory_size   = 512
+  memory_size   = 2048
 
   ephemeral_storage {
     size = 5612
@@ -496,7 +483,7 @@ resource "aws_lambda_function" "my_tf_function" {
 
 resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
   event_source_arn  = aws_dynamodb_table.http_crud_backend.stream_arn
-  function_name     = aws_lambda_function.my_tf_function.arn
+  function_name     = aws_lambda_function.lambda_terraform_runner.arn
   starting_position = "LATEST"
 }
 

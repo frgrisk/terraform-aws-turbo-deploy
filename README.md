@@ -26,7 +26,7 @@ Before deploying the Turbo Infrastructure, there are a set of AWS resources that
 
     The lambda function that is responsible for the deployment works by retrieving an image from the ecr registry that contains the terraform code to run the instance deployment.
 
-    After you have created the ecr registry, the docker image will need to be manually created and pushed to the registry. To do so you may need to install docker and may then use the provided script from this [turbo repository](https://github.com/frgrisk/turbo-deploy) with the following steps:
+    After you have created the ecr registry, the docker image will need to be manually created and pushed to the registry. To do so you may need to install docker and may then use the provided script from the [frgrisk/turbo-deploy repository](https://github.com/frgrisk/turbo-deploy) with the following steps:
 
     1. Clone the turbo-deploy repository
 
@@ -47,8 +47,32 @@ Before deploying the Turbo Infrastructure, there are a set of AWS resources that
 
     5. Run the script to create and push the image
 
-        `./deploy_lambda.sh`
+        `./deploy_ecr_image.sh`
   
+- S3 Bucket and associated zip file
+
+  The lambda function that acts as the API backend works by retrieving a zipfile that contains the golang build(named as a bootstrap file) from an S3 bucket.
+
+  After you have created the S3 bucket, the golang build will need to be manually built, zipped and uploaded to the S3 bucket. To do so, you may use the provided script from the [frgrisk/turbo-deploy repository](https://github.com/frgrisk/turbo-deploy) following these steps:
+
+  1. Clone the turbo-deploy repository
+
+        `git clone git@github.com:frgrisk/turbo-deploy.git`
+
+  2. Change the following values of the deploy_golang_binary.sh script to your environment
+
+      - S3_BUKCET=\<NAME OF YOUR S3 BUCKET\>
+      - S3_KEY=\<PATH TO THE GOLANG BUILD IN S3\>
+      - AWS_REGION=\<AWS REGION WHERE THE INFRASTRUCTURE WILL BE DEPLOYED\>
+
+  3. Configure the aws account keys in your terminal
+
+      `aws configure`
+
+  4. Run the script to create and push the image
+
+      `./deploy_golang_binary.sh`
+
 - Route53 Zone and registered domain
 
     The instances that are deployed through Turbo Deploy are meant to be accessible through the hostname that has been configured by the user, for this to work automatic registration of the hostname in an A record needs to be done.
@@ -62,9 +86,15 @@ While there are a few variables that can be configured through the module, the b
 - ecr_repository_name
 
     The name of the ecr registry that you created and contains the image for the lambda function
+- s3_golang_bucket_name
+
+    The name of the S3 bucket that you created and contains the zip file for the lambda function
+- s3_golang_bucket_key
+
+    The path to the zip file located in the S3 bucket specified in `s3_golang_bucket_name`
 - s3_tf_bucket_name
 
-    The name that you will give to the S3 bucket (must be unique)
+    The name that you will give to the S3 bucket that acts as the terraform backend (must be unique)
 - zone_id
 
     The zone id of Route53 Zone
@@ -90,6 +120,8 @@ module "my_turbo_module" {
 
   source                   = "../terraform-aws-turbo-deploy"
   ecr_repository_name      = "turbo-image"
+  s3_golang_bucket_name = "turbo-deploy-lambda-zip-bucket"
+  s3_golang_bucket_key  = "lambda/lambda_function.zip"
   s3_tf_bucket_name        = "turbo-deploy-s3"
   zone_id                  = "Z23ABC4XYZL05B"
   turbo_deploy_hostname    = "turbodeploy-dev"
