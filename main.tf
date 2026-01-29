@@ -411,6 +411,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
       PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
       USER_SCRIPTS               = jsonencode(keys(var.user_scripts))
+      SNS_TOPIC_ARN              = aws_sns_topic.terraform_failures.arn
     }
   }
   depends_on = [
