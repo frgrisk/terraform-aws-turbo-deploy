@@ -12,7 +12,7 @@ resource "aws_sns_topic_subscription" "email_subscription" {
 # Define the policy as a data source
 data "aws_iam_policy_document" "sns_publish_policy" {
   statement {
-    effect    = "Allow"
+    effect = "Allow"
     principals {
       type        = "AWS"
       identifiers = [aws_iam_role.terraform_lambda_role]
