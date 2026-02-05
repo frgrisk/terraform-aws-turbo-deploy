@@ -3,7 +3,7 @@ resource "aws_sns_topic" "terraform_failures" {
 }
 
 resource "aws_sns_topic_subscription" "email_subscription" {
-  count     = var.admin_email ? 1 : 0
+  count     = var.admin_email != null && var.admin_email != "" ? 1 : 0
   topic_arn = aws_sns_topic.terraform_failures.arn
   protocol  = "email"
   endpoint  = var.admin_email
@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "sns_publish_policy" {
     effect = "Allow"
     principals {
       type        = "AWS"
-      identifiers = [aws_iam_role.terraform_lambda_role]
+      identifiers = [aws_iam_role.terraform_lambda_role.arn]
     }
     actions   = ["SNS:Publish"]
     resources = [aws_sns_topic.terraform_failures.arn]
