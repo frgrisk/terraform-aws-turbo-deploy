@@ -269,6 +269,9 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:RunInstances",
           "ec2:DescribeInstances",
           "ec2:TerminateInstances",
+          "ec2:DescribeInstanceStatus",
+          "ec2:DescribeInstanceAttribute",
+          "ec2:DescribeInstanceCreditSpecifications",
           "ec2:ModifyInstanceAttribute",
           "ec2:DescribeInstanceTypes",
           "ec2:CreateTags",
@@ -286,6 +289,12 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:ReleaseAddress",
           "ec2:DescribeAddresses",
           "ec2:DescribeAddressesAttribute",
+          // EBS volumes
+          "ec2:CreateVolume",
+          "ec2:DeleteVolume",
+          "ec2:AttachVolume",
+          "ec2:DetachVolume",
+          "ec2:DescribeVolumes",
           // Snapshots
           "ec2:DescribeSnapshots",
           // AMIs
