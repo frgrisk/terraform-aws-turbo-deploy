@@ -159,6 +159,12 @@ variable "admin_email" {
   default     = null
 }
 
+variable "terraform_log" {
+  description = "The log level for terraform execution"
+  type        = string
+  default     = "ERROR"
+}
+
 # filter types can be found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html
 variable "image_filter_groups" {
   description = "Filter groups for different images"

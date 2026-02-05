@@ -409,7 +409,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
   }
   environment {
     variables = {
-      TF_LOG                     = "DEBUG",
+      TF_LOG                     = var.terraform_log
       AWS_STS_REGIONAL_ENDPOINTS = "regional"
       AWS_REGION_CUSTOM          = data.aws_region.current.name
       S3_BUCKET_NAME             = var.s3_tf_bucket_name
