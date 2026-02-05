@@ -170,9 +170,7 @@ resource "aws_iam_policy" "golang_lambda_policy" {
       {
         Effect = "Allow",
         "Action" : [
-          "ec2:RunInstances",
           "ec2:DescribeInstances",
-          "ec2:TerminateInstances",
           "ec2:StopInstances",
           "ec2:StartInstances",
           "ec2:RebootInstances",
@@ -183,32 +181,6 @@ resource "aws_iam_policy" "golang_lambda_policy" {
           "ec2:DescribeInstanceTypes",
           "ec2:CreateTags",
           "ec2:DescribeTags",
-          // Network interfaces
-          "ec2:DescribeVpcs",
-          "ec2:CreateNetworkInterface",
-          "ec2:DeleteNetworkInterface",
-          "ec2:AttachNetworkInterface",
-          "ec2:DetachNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-          // Security groups
-          "ec2:DescribeSecurityGroups",
-          "ec2:CreateSecurityGroup",
-          "ec2:DeleteSecurityGroup",
-          "ec2:AuthorizeSecurityGroupIngress",
-          "ec2:RevokeSecurityGroupIngress",
-          "ec2:AuthorizeSecurityGroupEgress",
-          "ec2:RevokeSecurityGroupEgress",
-          // Elastic IPs
-          "ec2:AllocateAddress",
-          "ec2:AssociateAddress",
-          "ec2:DisassociateAddress",
-          "ec2:ReleaseAddress",
-          // EBS volumes
-          "ec2:CreateVolume",
-          "ec2:DeleteVolume",
-          "ec2:AttachVolume",
-          "ec2:DetachVolume",
-          "ec2:DescribeVolumes",
           // Snapshots
           "ec2:CreateSnapshot",
           "ec2:DeleteSnapshot",
@@ -217,10 +189,6 @@ resource "aws_iam_policy" "golang_lambda_policy" {
           "ec2:CreateImage",
           "ec2:DeregisterImage",
           "ec2:DescribeImages",
-          // Key pairs
-          "ec2:CreateKeyPair",
-          "ec2:DeleteKeyPair",
-          "ec2:DescribeKeyPairs",
           // Other
           "ec2:DescribeAvailabilityZones",
           //Spot requests
@@ -293,8 +261,7 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ecr:BatchGetImage",
           "ecr:BatchCheckLayerAvailability",
         ],
-        # Resource = "${data.aws_ecr_repository.lambda_terraform_runner.arn}"
-        Resource = "*"
+        Resource = "${data.aws_ecr_repository.lambda_terraform_runner.arn}"
       },
       {
         Effect = "Allow",
@@ -302,9 +269,6 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:RunInstances",
           "ec2:DescribeInstances",
           "ec2:TerminateInstances",
-          "ec2:StopInstances",
-          "ec2:StartInstances",
-          "ec2:RebootInstances",
           "ec2:DescribeInstanceStatus",
           "ec2:DescribeInstanceAttribute",
           "ec2:DescribeInstanceCreditSpecifications",
@@ -315,19 +279,9 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:DeleteTags",
           // Network interfaces
           "ec2:DescribeVpcs",
-          "ec2:CreateNetworkInterface",
-          "ec2:DeleteNetworkInterface",
-          "ec2:AttachNetworkInterface",
-          "ec2:DetachNetworkInterface",
           "ec2:DescribeNetworkInterfaces",
           // Security groups
           "ec2:DescribeSecurityGroups",
-          "ec2:CreateSecurityGroup",
-          "ec2:DeleteSecurityGroup",
-          "ec2:AuthorizeSecurityGroupIngress",
-          "ec2:RevokeSecurityGroupIngress",
-          "ec2:AuthorizeSecurityGroupEgress",
-          "ec2:RevokeSecurityGroupEgress",
           // Elastic IPs
           "ec2:AllocateAddress",
           "ec2:AssociateAddress",
@@ -342,17 +296,10 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
           "ec2:DetachVolume",
           "ec2:DescribeVolumes",
           // Snapshots
-          "ec2:CreateSnapshot",
-          "ec2:DeleteSnapshot",
           "ec2:DescribeSnapshots",
           // AMIs
-          "ec2:CreateImage",
-          "ec2:DeregisterImage",
           "ec2:DescribeImages",
-          // Key pairs
-          "ec2:ImportKeyPair",
-          "ec2:CreateKeyPair",
-          "ec2:DeleteKeyPair",
+          // Key pairs,
           "ec2:DescribeKeyPairs",
           // Other
           "ec2:DescribeAvailabilityZones",
@@ -462,7 +409,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
   }
   environment {
     variables = {
-      TF_LOG                     = "DEBUG",
+      TF_LOG                     = var.terraform_log
       AWS_STS_REGIONAL_ENDPOINTS = "regional"
       AWS_REGION_CUSTOM          = data.aws_region.current.name
       S3_BUCKET_NAME             = var.s3_tf_bucket_name
@@ -473,6 +420,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
       PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
       USER_SCRIPTS               = jsonencode(keys(var.user_scripts))
+      SNS_TOPIC_ARN              = aws_sns_topic.terraform_failures.arn
     }
   }
   depends_on = [
