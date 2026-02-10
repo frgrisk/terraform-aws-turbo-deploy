@@ -3,7 +3,7 @@ resource "aws_sns_topic" "terraform_failures" {
 }
 
 resource "aws_sns_topic_subscription" "email_subscription" {
-  for_each = toset(var.tf_failure_emails)
+  for_each  = toset(var.tf_failure_emails)
   topic_arn = aws_sns_topic.terraform_failures.arn
   protocol  = "email"
   endpoint  = each.value
