@@ -3,10 +3,10 @@ resource "aws_sns_topic" "terraform_failures" {
 }
 
 resource "aws_sns_topic_subscription" "email_subscription" {
-  count     = var.admin_email != null && var.admin_email != "" ? 1 : 0
+  for_each = toset(var.tf_failure_emails)
   topic_arn = aws_sns_topic.terraform_failures.arn
   protocol  = "email"
-  endpoint  = var.admin_email
+  endpoint  = each.value
 }
 
 # Define the policy as a data source
