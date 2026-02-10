@@ -433,6 +433,11 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
   event_source_arn  = aws_dynamodb_table.http_crud_backend.stream_arn
   function_name     = aws_lambda_function.lambda_terraform_runner.arn
   starting_position = "LATEST"
+  maximum_retry_attempts = 1
+
+  tags = {
+    Name = "dynamodb-stream-mapping"
+  }
 }
 
 resource "aws_s3_object" "userdata_upload" {
