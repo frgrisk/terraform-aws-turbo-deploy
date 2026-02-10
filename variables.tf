@@ -153,10 +153,10 @@ variable "public_key" {
   default     = null
 }
 
-variable "admin_email" {
+variable "tf_failure_emails" {
   description = "The email to send to when a failure is detected with the terraform apply process"
-  type        = string
-  default     = null
+  type        = list(string)
+  default     = []
 }
 
 variable "terraform_log" {
