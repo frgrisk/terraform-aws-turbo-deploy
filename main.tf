@@ -417,7 +417,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
       AWS_REGION_CUSTOM          = data.aws_region.current.name
       S3_BUCKET_NAME             = var.s3_tf_bucket_name
       DYNAMODB_TABLE             = var.dynamodb_tf_locks_name
-      SECURITY_GROUP_ID          = var.security_group_id != null ? var.security_group_id : ""
+      SECURITY_GROUP_IDS         = jsonencode(var.security_group_ids)
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
       HOSTED_ZONE_ID             = var.zone_id
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name

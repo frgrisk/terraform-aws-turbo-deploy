@@ -4,10 +4,10 @@ variable "ecr_repository_name" {
   default     = null
 }
 
-variable "security_group_id" {
+variable "security_group_ids" {
   description = "id of security group associated with ec2 deployment"
-  type        = string
-  default     = null
+  type        = list(string)
+  default     = []
 }
 
 variable "public_subnet_ids" {
