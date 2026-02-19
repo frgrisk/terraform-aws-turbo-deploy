@@ -267,6 +267,9 @@ resource "aws_iam_policy" "terraform_lambda_policy" {
         Effect = "Allow",
         "Action" : [
           "ec2:RunInstances",
+          "ec2:StopInstances",
+          "ec2:StartInstances",
+          "ec2:RebootInstances",
           "ec2:DescribeInstances",
           "ec2:TerminateInstances",
           "ec2:DescribeInstanceStatus",
