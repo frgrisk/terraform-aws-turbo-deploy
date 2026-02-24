@@ -189,3 +189,9 @@ variable "image_filter_groups" {
     ]
   }
 }
+
+variable "instance_profile" {
+  description = "Name of the instance profile to assign to the Turbo Deployed instances"
+  type        = string
+  default     = null
+}
