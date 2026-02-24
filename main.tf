@@ -421,7 +421,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
       PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
       HOSTED_ZONE_ID             = var.zone_id
       PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
-      PROFILE_NAME               = aws_iam_instance_profile.turbodeploy_profile.name
+      PROFILE_NAME               = var.instance_profile
       USER_SCRIPTS               = jsonencode(keys(var.user_scripts))
       SNS_TOPIC_ARN              = aws_sns_topic.terraform_failures.arn
     }
@@ -461,57 +461,4 @@ resource "aws_s3_object" "base_userdata_upload" {
 resource "aws_key_pair" "admin_key" {
   key_name   = "admin_key"
   public_key = var.public_key
-}
-
-resource "aws_iam_instance_profile" "turbodeploy_profile" {
-  name = "turbodeploy-ec2-profile"
-  role = aws_iam_role.turbo_deploy_instances.name
-}
-
-resource "aws_iam_role" "turbo_deploy_instances" {
-  name               = "TurboDeployEC2Describe"
-  path               = "/"
-  assume_role_policy = data.aws_iam_policy_document.instance_assume_role_policy.json
-}
-
-data "aws_iam_policy_document" "instance_assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role_policy" "turbo_instance_policy" {
-  name = "turbo_instance_policy"
-  role = aws_iam_role.turbo_deploy_instances.id
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression result to valid JSON syntax.
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "ec2:Describe*",
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "S3ReadonOnlyAccess" {
-  role       = aws_iam_role.turbo_deploy_instances.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
-}
-
-
-resource "aws_iam_role_policy_attachment" "CloudWatchAgentServerPolicy" {
-  role       = aws_iam_role.turbo_deploy_instances.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
