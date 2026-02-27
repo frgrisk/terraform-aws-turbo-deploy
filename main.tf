@@ -7,6 +7,17 @@ terraform {
   }
 }
 
+locals {
+  lambda_deployment_config = {
+    for region, cfg in var.deployment_config :
+    region => cfg.compute
+  }
+  terraform_deployment_config = {
+    for region, cfg in var.deployment_config :
+    region => cfg.network
+  }
+}
+
 data "aws_region" "current" {}
 
 // retrieve the zone name
@@ -382,14 +393,12 @@ resource "aws_lambda_function" "lambda_api_backend" {
   environment {
     variables = {
       MY_CUSTOM_ENV        = "Lambda"
-      MY_AMI_ATTR          = jsonencode(var.ec2_attributes)
-      MY_REGION            = data.aws_region.current.name
+      DEPLOYMENT_CONFIG    = base64gzip(jsonencode(local.lambda_deployment_config))
       ROUTE53_DOMAIN_NAME  = data.aws_route53_zone.zone_name.name
       WEBSERVER_HOSTNAME   = var.turbo_deploy_hostname
       WEBSERVER_HTTP_PORT  = var.turbo_deploy_http_port
       WEBSERVER_HTTPS_PORT = var.turbo_deploy_https_port
       USER_SCRIPTS         = jsonencode(keys(var.user_scripts))
-      AMI_FILTERS          = base64gzip(jsonencode(var.image_filter_groups))
     }
   }
 }
@@ -413,14 +422,12 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
   environment {
     variables = {
       TF_LOG                     = var.terraform_log
+      NETWORK_CONFIG             = base64encode(jsonencode(local.terraform_deployment_config))
       AWS_STS_REGIONAL_ENDPOINTS = "regional"
       AWS_REGION_CUSTOM          = data.aws_region.current.name
       S3_BUCKET_NAME             = var.s3_tf_bucket_name
       DYNAMODB_TABLE             = var.dynamodb_tf_locks_name
-      SECURITY_GROUP_IDS         = jsonencode(var.security_group_ids)
-      PUBLIC_SUBNET_ID           = length(var.public_subnet_ids) > 0 ? element(var.public_subnet_ids, 0) : ""
       HOSTED_ZONE_ID             = var.zone_id
-      PUBLIC_KEY                 = aws_key_pair.admin_key.key_name
       PROFILE_NAME               = var.instance_profile
       USER_SCRIPTS               = jsonencode(keys(var.user_scripts))
       SNS_TOPIC_ARN              = aws_sns_topic.terraform_failures.arn
@@ -456,9 +463,4 @@ resource "aws_s3_object" "base_userdata_upload" {
   key          = "user-data-base/base.sh"
   content_type = "text/plain"
   content      = var.base_script
-}
-
-resource "aws_key_pair" "admin_key" {
-  key_name   = "admin_key"
-  public_key = var.public_key
 }

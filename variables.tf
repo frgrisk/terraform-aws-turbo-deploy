@@ -4,18 +4,6 @@ variable "ecr_repository_name" {
   default     = null
 }
 
-variable "security_group_ids" {
-  description = "id of security group associated with ec2 deployment"
-  type        = list(string)
-  default     = []
-}
-
-variable "public_subnet_ids" {
-  description = "ids of public subnet associated with ec2 deployment"
-  type        = list(string)
-  default     = []
-}
-
 // not even sure if s3 can have a default name
 variable "s3_tf_bucket_name" {
   description = "name of the s3 bucket for the lambda with terraform binary"
@@ -98,15 +86,6 @@ variable "terraform_lambda_function_name" {
   default     = "MyTerraformFunction"
 }
 
-variable "ec2_attributes" {
-  description = "EC2 attributes that can be modified (e.g. AMI, Server Type, etc...)"
-  type        = map(list(string))
-  default = {
-    ServerSizes = ["t3.medium"]
-    Amis        = ["ami-07ac2451de5d161f6"]
-  }
-}
-
 variable "user_scripts" {
   description = "The userdata to display as choices and use when launching the instance"
   type        = map(string)
@@ -147,12 +126,6 @@ variable "turbo_deploy_https_port" {
   default     = "4443"
 }
 
-variable "public_key" {
-  description = "The default public key to be added to all deployed instances"
-  type        = string
-  default     = null
-}
-
 variable "tf_failure_emails" {
   description = "The email to send to when a failure is detected with the terraform apply process"
   type        = list(string)
@@ -166,28 +139,23 @@ variable "terraform_log" {
 }
 
 # filter types can be found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html
-variable "image_filter_groups" {
-  description = "Filter groups for different images"
-  type = map(list(object({
-    name   = string
-    values = list(string)
-  })))
-  default = {
-    "alma-ami" = [
-      {
-        name   = "is-public"
-        values = ["true"]
-      },
-      {
-        name   = "name"
-        values = ["AlmaLinux OS*"]
-      },
-      {
-        name   = "state"
-        values = ["available"]
-      }
-    ]
-  }
+variable "deployment_config" {
+  description = "Region-specific compute and network configuration"
+
+  type = map(object({
+    compute = object({
+      ami_filter_groups = map(list(object({
+        name   = string
+        values = list(string)
+      })))
+      instance_types = list(string)
+    })
+    network = object({
+      subnet_id          = string
+      security_group_ids = list(string)
+      key_name           = string
+    })
+  }))
 }
 
 variable "instance_profile" {
