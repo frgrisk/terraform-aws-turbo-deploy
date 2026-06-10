@@ -1,8 +1,10 @@
 resource "aws_sns_topic" "terraform_failures" {
-  name = "terraform-failures-topic"
+  region = var.region
+  name   = "terraform-failures-topic"
 }
 
 resource "aws_sns_topic_subscription" "email_subscription" {
+  region    = var.region
   for_each  = toset(var.tf_failure_emails)
   topic_arn = aws_sns_topic.terraform_failures.arn
   protocol  = "email"
@@ -24,6 +26,7 @@ data "aws_iam_policy_document" "sns_publish_policy" {
 
 # Attach the policy to the SNS topic
 resource "aws_sns_topic_policy" "allow_publish" {
+  region = var.region
   arn    = aws_sns_topic.terraform_failures.arn
   policy = data.aws_iam_policy_document.sns_publish_policy.json
 }
