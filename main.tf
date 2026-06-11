@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~>5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -18,8 +18,6 @@ locals {
   }
 }
 
-data "aws_region" "current" {}
-
 // retrieve the zone name
 data "aws_route53_zone" "zone_name" {
   zone_id      = var.zone_id
@@ -28,12 +26,14 @@ data "aws_route53_zone" "zone_name" {
 
 // create an s3 bucket for lambda tf state
 resource "aws_s3_bucket" "s3_terraform_state" {
+  region        = var.region
   bucket        = var.s3_tf_bucket_name
   force_destroy = var.s3_force_destroy
 }
 
 // create dynamodb locks for lambda
 resource "aws_dynamodb_table" "dynamoDB_terraform_locks" {
+  region       = var.region
   name         = var.dynamodb_tf_locks_name
   billing_mode = var.dynamodb_billing_mode
   hash_key     = var.dynamodb_hash_key
@@ -46,12 +46,14 @@ resource "aws_dynamodb_table" "dynamoDB_terraform_locks" {
 
 // api gateway
 resource "aws_api_gateway_rest_api" "my_api_gateway" {
+  region      = var.region
   name        = var.api_gateway_name
   description = "API Gateway for Golang Lambda Function"
 }
 
 // made to configure incoming request paths
 resource "aws_api_gateway_resource" "proxy" {
+  region      = var.region
   rest_api_id = aws_api_gateway_rest_api.my_api_gateway.id
   parent_id   = aws_api_gateway_rest_api.my_api_gateway.root_resource_id
   path_part   = "{proxy+}"
@@ -59,6 +61,7 @@ resource "aws_api_gateway_resource" "proxy" {
 
 // allows any http request method to be used
 resource "aws_api_gateway_method" "proxy" {
+  region        = var.region
   rest_api_id   = aws_api_gateway_rest_api.my_api_gateway.id
   resource_id   = aws_api_gateway_resource.proxy.id
   http_method   = "ANY"
@@ -67,6 +70,7 @@ resource "aws_api_gateway_method" "proxy" {
 
 // specify that the incoming request should be routed back to the lambda
 resource "aws_api_gateway_integration" "lambda" {
+  region      = var.region
   rest_api_id = aws_api_gateway_rest_api.my_api_gateway.id
   resource_id = aws_api_gateway_resource.proxy.id
   http_method = aws_api_gateway_method.proxy.http_method
@@ -78,11 +82,13 @@ resource "aws_api_gateway_integration" "lambda" {
 
 // deploy the api gatway to activate the configuration and expose the API at a URL that can be used
 resource "aws_api_gateway_deployment" "my_api_deployment" {
+  region      = var.region
   depends_on  = [aws_api_gateway_integration.lambda]
   rest_api_id = aws_api_gateway_rest_api.my_api_gateway.id
 }
 
 resource "aws_api_gateway_stage" "dev" {
+  region        = var.region
   deployment_id = aws_api_gateway_deployment.my_api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.my_api_gateway.id
   stage_name    = "dev"
@@ -90,6 +96,7 @@ resource "aws_api_gateway_stage" "dev" {
 
 // by default no two aws services have access to one another, hence explicit permission must be granted
 resource "aws_lambda_permission" "apigw" {
+  region        = var.region
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.lambda_api_backend.function_name
@@ -103,6 +110,7 @@ resource "aws_lambda_permission" "apigw" {
 
 // if custom domain name is set, map to it
 resource "aws_api_gateway_base_path_mapping" "base_path_mapping" {
+  region      = var.region
   count       = var.api_gateway_domain_name != null && var.api_gateway_domain_name != "" ? 1 : 0
   api_id      = aws_api_gateway_rest_api.my_api_gateway.id
   domain_name = var.api_gateway_domain_name
@@ -110,6 +118,7 @@ resource "aws_api_gateway_base_path_mapping" "base_path_mapping" {
 
 // dynamodb table to store records posted from frontend
 resource "aws_dynamodb_table" "http_crud_backend" {
+  region         = var.region
   name           = var.dynamodb_http_crud_backend_name
   billing_mode   = "PROVISIONED"
   read_capacity  = 5
@@ -132,10 +141,13 @@ resource "aws_dynamodb_table" "http_crud_backend" {
 
   global_secondary_index {
     name            = "HostnameIndex"
-    hash_key        = "hostname"
     projection_type = "ALL"
     read_capacity   = 5
     write_capacity  = 5
+    key_schema {
+      attribute_name = "hostname"
+      key_type       = "HASH"
+    }
   }
   stream_enabled   = true
   stream_view_type = "NEW_IMAGE"
@@ -375,12 +387,14 @@ resource "aws_iam_role_policy_attachment" "golang_lambda_policy_attach" {
 
 # Query the existing S3 object
 data "aws_s3_object" "lambda_package" {
+  region = var.region
   bucket = var.s3_golang_bucket_name
   key    = var.s3_golang_bucket_key
 }
 
 #This lambda resource is the main backend logic for handling incoming API requests and managing EC2 instances
 resource "aws_lambda_function" "lambda_api_backend" {
+  region           = var.region
   function_name    = var.lambda_api_backend_name
   s3_bucket        = var.s3_golang_bucket_name
   s3_key           = var.s3_golang_bucket_key
@@ -404,11 +418,13 @@ resource "aws_lambda_function" "lambda_api_backend" {
 }
 
 data "aws_ecr_repository" "lambda_terraform_runner" {
-  name = var.ecr_repository_name
+  region = var.region
+  name   = var.ecr_repository_name
 }
 
 # This lambda resource is responsible for executing Terraform operations using a Docker image stored in ECR
 resource "aws_lambda_function" "lambda_terraform_runner" {
+  region        = var.region
   package_type  = "Image"
   image_uri     = "${data.aws_ecr_repository.lambda_terraform_runner.repository_url}:latest"
   role          = aws_iam_role.terraform_lambda_role.arn
@@ -424,7 +440,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
       TF_LOG                     = var.terraform_log
       NETWORK_CONFIG             = base64encode(jsonencode(local.terraform_deployment_config))
       AWS_STS_REGIONAL_ENDPOINTS = "regional"
-      AWS_REGION_CUSTOM          = data.aws_region.current.name
+      AWS_REGION_CUSTOM          = var.region
       S3_BUCKET_NAME             = var.s3_tf_bucket_name
       DYNAMODB_TABLE             = var.dynamodb_tf_locks_name
       HOSTED_ZONE_ID             = var.zone_id
@@ -440,6 +456,7 @@ resource "aws_lambda_function" "lambda_terraform_runner" {
 }
 
 resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
+  region                 = var.region
   event_source_arn       = aws_dynamodb_table.http_crud_backend.stream_arn
   function_name          = aws_lambda_function.lambda_terraform_runner.arn
   starting_position      = "LATEST"
@@ -451,6 +468,7 @@ resource "aws_lambda_event_source_mapping" "terraform_event_mapping" {
 }
 
 resource "aws_s3_object" "userdata_upload" {
+  region       = var.region
   for_each     = var.user_scripts
   bucket       = aws_s3_bucket.s3_terraform_state.bucket
   key          = "user-data-scripts/${each.key}.sh"
@@ -459,6 +477,7 @@ resource "aws_s3_object" "userdata_upload" {
 }
 
 resource "aws_s3_object" "base_userdata_upload" {
+  region       = var.region
   bucket       = aws_s3_bucket.s3_terraform_state.bucket
   key          = "user-data-base/base.sh"
   content_type = "text/plain"

@@ -163,3 +163,8 @@ variable "instance_profile" {
   type        = string
   default     = null
 }
+
+variable "region" {
+  description = "The AWS region to deploy to"
+  type        = string
+}

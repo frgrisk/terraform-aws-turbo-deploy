@@ -113,10 +113,7 @@ Here is an example of a terraform deployment of the turbo deploy infrastructure 
 
 ```hcl
 module "my_turbo_module" {
-  providers = {
-    aws = aws
-  }
-
+  region                   = "ap-southeast-5"
   source                   = "git::https://github.com/frgrisk/terraform-aws-turbo-deploy.git"
   ecr_repository_name      = "turbo-deploy-tf-function"
   s3_golang_bucket_name    = "turbo-deploy-lambda-zip-bucket"
