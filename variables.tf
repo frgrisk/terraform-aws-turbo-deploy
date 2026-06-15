@@ -167,4 +167,5 @@ variable "instance_profile" {
 variable "region" {
   description = "The AWS region to deploy to"
   type        = string
+  default     = null
 }
